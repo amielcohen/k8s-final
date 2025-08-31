@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+spec:
+  type: {{ .Values.wordpress.service.type }}
+  selector: { app: wordpress }
+  ports:
+    - name: http
+      port: {{ .Values.wordpress.service.port }}
+      targetPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+spec:
+  replicas: {{ .Values.wordpress.replicaCount }}
+  selector:
+    matchLabels: { app: wordpress }
+  template:
+    metadata:
+      labels: { app: wordpress }
+    spec:
+      containers:
+        - name: wordpress
+          image: "{{ .Values.wordpress.image.repository }}:{{ .Values.wordpress.image.tag }}"
+          imagePullPolicy: {{ .Values.wordpress.image.pullPolicy }}
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: db
+            - name: WORDPRESS_DB_USER
+              valueFrom: { secretKeyRef: { name: wp-db-secret, key: MYSQL_USER } }
+            - name: WORDPRESS_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: wp-db-secret, key: MYSQL_PASSWORD } }
+            - name: WORDPRESS_DB_NAME
+              valueFrom: { secretKeyRef: { name: wp-db-secret, key: MYSQL_DATABASE } }
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: wp-data
+              mountPath: /var/www/html
+          {{- /* Probes: TCP by default; switch to HTTP by editing values */}}
+          {{- if eq .Values.wordpress.probes.readiness.type "tcp" }}
+          readinessProbe:
+            tcpSocket: { port: {{ .Values.wordpress.probes.readiness.port }} }
+            initialDelaySeconds: {{ .Values.wordpress.probes.readiness.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.wordpress.probes.readiness.timeoutSeconds }}
+            periodSeconds: {{ .Values.wordpress.probes.readiness.periodSeconds }}
+            failureThreshold: {{ .Values.wordpress.probes.readiness.failureThreshold }}
+          {{- else }}
+          readinessProbe:
+            httpGet: { path: "/", port: {{ .Values.wordpress.probes.readiness.port }} }
+            initialDelaySeconds: {{ .Values.wordpress.probes.readiness.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.wordpress.probes.readiness.timeoutSeconds }}
+            periodSeconds: {{ .Values.wordpress.probes.readiness.periodSeconds }}
+            failureThreshold: {{ .Values.wordpress.probes.readiness.failureThreshold }}
+          {{- end }}
+          {{- if eq .Values.wordpress.probes.liveness.type "tcp" }}
+          livenessProbe:
+            tcpSocket: { port: {{ .Values.wordpress.probes.liveness.port }} }
+            initialDelaySeconds: {{ .Values.wordpress.probes.liveness.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.wordpress.probes.liveness.timeoutSeconds }}
+            periodSeconds: {{ .Values.wordpress.probes.liveness.periodSeconds }}
+            failureThreshold: {{ .Values.wordpress.probes.liveness.failureThreshold }}
+          {{- else }}
+          livenessProbe:
+            httpGet: { path: "/", port: {{ .Values.wordpress.probes.liveness.port }} }
+            initialDelaySeconds: {{ .Values.wordpress.probes.liveness.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.wordpress.probes.liveness.timeoutSeconds }}
+            periodSeconds: {{ .Values.wordpress.probes.liveness.periodSeconds }}
+            failureThreshold: {{ .Values.wordpress.probes.liveness.failureThreshold }}
+          {{- end }}
+      volumes:
+        - name: wp-data
+          persistentVolumeClaim:
+            claimName: {{ .Values.wordpress.pvc.name }}

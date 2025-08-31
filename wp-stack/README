@@ -1,0 +1,24 @@
+# WP Stack (WordPress + MariaDB on K8s)
+
+Deploys WordPress + MariaDB to Kubernetes (tested on Minikube on Amazon Linux EC2).  
+Includes Helm chart for app, PVCs, and optional Ingress. Monitoring via `kube-prometheus-stack` + Grafana.
+
+## Prerequisites
+- Kubernetes cluster (e.g. Minikube)
+- `kubectl`, `helm` installed
+- Images in ECR:
+  - WordPress: `992382545251.dkr.ecr.us-east-1.amazonaws.com/wordpress-amiel:latest`
+  - MariaDB:   `992382545251.dkr.ecr.us-east-1.amazonaws.com/mariadb-amiel:10.6.4-focal`
+- (Optional) Ingress-NGINX Controller
+
+## Install
+
+```bash
+cd wp-stack
+
+# install/upgrade
+helm upgrade --install wp .
+
+# wait until Ready
+kubectl get pods -w   # Ctrl+C when wordpress pods are 1/1 and mariadb-0 is 1/1
+

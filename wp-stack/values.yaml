@@ -1,0 +1,54 @@
+wordpress:
+  replicaCount: 2
+  image:
+    repository: 992382545251.dkr.ecr.us-east-1.amazonaws.com/wordpress-amiel
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources: {}
+  service:
+    type: ClusterIP
+    port: 80
+  pvc:
+    enabled: true
+    name: wp-pvc
+    size: 5Gi
+    storageClassName: ""   # ריק = ברירת המחדל (standard)
+  probes:
+    # שמרנו TCP כדי לייצב; אפשר להחליף ל-HTTP כשנוח
+    readiness:
+      type: tcp
+      port: 80
+      initialDelaySeconds: 45
+      timeoutSeconds: 5
+      periodSeconds: 10
+      failureThreshold: 12
+    liveness:
+      type: tcp
+      port: 80
+      initialDelaySeconds: 120
+      timeoutSeconds: 5
+      periodSeconds: 10
+      failureThreshold: 6
+
+mariadb:
+  image:
+    repository: 992382545251.dkr.ecr.us-east-1.amazonaws.com/mariadb-amiel
+    tag: 10.6.4-focal
+    pullPolicy: IfNotPresent
+  resources: {}
+  storage:
+    size: 5Gi
+    storageClassName: ""   # ריק = ברירת המחדל (standard)
+
+db:
+  name: wordpress
+  user: wordpress
+  password: wordpress
+  rootPassword: somewordpress
+
+ingress:
+  enabled: false
+  className: nginx
+  host: ""     # למשל: 34.203.9.78.nip.io
+  annotations: {}
+  tls: []      # דוגמה: [{ hosts: ["example.nip.io"], secretName: wp-tls }]

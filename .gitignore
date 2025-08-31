@@ -1,0 +1,12 @@
+# Minikube & heavy locals
+.minikube/
+preloaded-images-*.tar*
+kicbase_*.tar*
+minikube-linux-*
+*.tar
+*.tar.lz4
+*.iso
+
+# OS / tooling
+.DS_Store
+*.log

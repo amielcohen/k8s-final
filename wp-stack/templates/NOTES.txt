@@ -1,0 +1,10 @@
+1) Verify:
+   kubectl get pods,svc,ingress
+   kubectl get endpoints wordpress
+
+2) If using port-forward:
+   kubectl port-forward svc/wordpress 8081:80
+   open http://127.0.0.1:8081/
+
+3) If using ingress (ingress.enabled=true):
+   open http://{{ .Values.ingress.host }}/
